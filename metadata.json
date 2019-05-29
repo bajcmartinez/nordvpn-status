@@ -1,1 +1,1 @@
-{"name": "nordvpn-status", "description": "Displays the current status of your nordvpn connection", "uuid": "nordvpn_status@jcmartinez.dev", "shell-version": ["3.32.0"]}
+{"name": "nordvpn-status", "description": "Displays the current status of your nordvpn connection", "uuid": "nordvpn_status@jcmartinez.dev", "shell-version": ["3.32.0"], "url":"https://github.com/bajcmartinez/nordvpn-status"}

@@ -1,53 +1,131 @@
-
-const St = imports.gi.St;
+// Includes;
+const { St, Clutter } = imports.gi;
 const Main = imports.ui.main;
-const Tweener = imports.ui.tweener;
+const PanelMenu = imports.ui.panelMenu;
+const GLib = imports.gi.GLib;
+const Lang = imports.lang;
 
-let text, button;
+let statusIndicator;
 
-function _hideHello() {
-    Main.uiGroup.remove_actor(text);
-    text = null;
-}
+class NordVPN {
+    constructor()
+    {
+        this._commands = {
+            status: 'nordvpn status'
+        };
 
-function _showHello() {
-    if (!text) {
-        text = new St.Label({ style_class: 'helloworld-label', text: "Hello, world!" });
-        Main.uiGroup.add_actor(text);
+        this._states = {
+            CONNECTED: 'CONNECTED'
+        };
     }
 
-    text.opacity = 255;
+    getStatus() {
+        const full_status = GLib.spawn_command_line_sync(this._commands.status)[1].toString();
+        const result = full_status.split('\n');
+        const status = result[0].replace("Status:", "").trim();
 
-    let monitor = Main.layoutManager.primaryMonitor;
+        if (status.toUpperCase() === this._states.CONNECTED) {
+            const serverNumber = result[1].match(/\d+/);
+            const country = result[2].replace("Country:", "").trim();
+            const city = result[3].replace("City:", "").trim();
 
-    text.set_position(monitor.x + Math.floor(monitor.width / 2 - text.width / 2),
-                      monitor.y + Math.floor(monitor.height / 2 - text.height / 2));
-
-    Tweener.addTween(text,
-                     { opacity: 0,
-                       time: 2,
-                       transition: 'easeOutQuad',
-                       onComplete: _hideHello });
+            return {
+                connected: true,
+                status,
+                serverNumber,
+                country,
+                city,
+                full_status
+            }
+        } else {
+            return {
+                connected: false,
+                status: status,
+                full_status
+            }
+        }
+    }
 }
 
-function init() {
-    button = new St.Bin({ style_class: 'panel-button',
-                          reactive: true,
-                          can_focus: true,
-                          x_fill: true,
-                          y_fill: false,
-                          track_hover: true });
-    let icon = new St.Icon({ icon_name: 'system-run-symbolic',
-                             style_class: 'system-status-icon' });
+const StatusIndicator = new Lang.Class({
+    Name: 'VpnIndicator',
+    Extends: PanelMenu.Button,
 
-    button.set_child(icon);
-    button.connect('button-press-event', _showHello);
+    _init() {
+        this.parent(0.0, "NordVPN Status Indicator", false);
+
+        const hbox = new St.BoxLayout({ style_class: 'panel-status-label-box' });
+
+        this._panelLabel = new St.Label({
+            text: 'NordVPN',
+            y_expand: true,
+            y_align: Clutter.ActorAlign.CENTER
+        });
+        hbox.add_child(this._panelLabel);
+
+        this._statusLabel = new St.Label({
+            text: 'NordVPN',
+            y_expand: true,
+            y_align: Clutter.ActorAlign.CENTER,
+            style_class: 'popup_status_label'
+        });
+
+        this.menu.box.add(this._statusLabel);
+
+        // Add the label to the UI
+        this.actor.add_actor(hbox);
+
+        this.vpnHandler = new NordVPN();
+    },
+
+    enable() {
+        this._refresh();
+    },
+
+    /**
+     * Call NordVPN Command Line Tool to get the current status of the connection
+     *
+     * @private
+     */
+    _refresh() {
+        this._update(this.vpnHandler.getStatus());
+    },
+
+    _update(vpnStatus) {
+        // Update the panel button
+        if (vpnStatus.connected) {
+            this._panelLabel.style_class = 'label_connected';
+            this._panelLabel.text = `${vpnStatus.status}: ${vpnStatus.city} #${vpnStatus.serverNumber}`;
+        } else {
+            this._panelLabel.style_class = 'label_disconnected';
+            this._panelLabel.text = `${vpnStatus.status}`;
+        }
+        this._statusLabel.text = vpnStatus.full_status;
+
+        //this._panelLabel.style_class = vpnStatus.styleClass;
+    },
+
+    destroy() {
+        // Call destroy on the parent
+        this.parent();
+    }
+});
+
+function init() {
+    // Init the indicator
+    statusIndicator = new StatusIndicator();
 }
 
 function enable() {
-    Main.panel._rightBox.insert_child_at_index(button, 0);
+    statusIndicator.enable();
+    Main.panel.addToStatusArea('nordvpn-status-indicator', statusIndicator);
 }
 
 function disable() {
-    Main.panel._rightBox.remove_child(button);
+    // Remove the indicator from the panel
+    statusIndicator.disable();
+}
+
+function destroy () {
+    statusIndicator.destroy();
 }
