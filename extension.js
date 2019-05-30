@@ -77,99 +77,6 @@ class NordVPN {
     }
 }
 
-// const StatusIndicator = new Lang.Class({
-//     Name: 'VpnIndicator',
-//     Extends: PanelMenu.SystemIndicator,
-//
-//     onClick() {
-//         log("Here");
-//         this._statusLabel.text = "hellos";
-//     },
-//
-//     _init() {
-//         this.parent(0, "NordVPN Status Indicator", false);
-//
-//         //this.style_class = "tmp";
-//
-//         // We are creating a box layout with shell toolkit
-//         let box = new St.BoxLayout();
-//
-//         // Add icon to the box
-//         this._icon = new St.Icon({
-//             icon_name: "network-vpn-symbolic",
-//             style_class: "system-status-icon"
-//         });
-//         box.add(this._icon);
-//
-//         // Add menu popup
-//         this._statusLabel = new St.Label({
-//             text: 'NordVPN',
-//             y_expand: true,
-//             y_align: Clutter.ActorAlign.CENTER,
-//             style_class: 'popup_status_label'
-//         });
-//         this.menu.box.add(this._statusLabel);
-//
-//         // Add elements to the UI
-//         this.actor.add_actor(box);
-//
-//         this.vpnHandler = new NordVPN();
-//
-//         this._timer = null;
-//     },
-//
-//     enable() {
-//         this._refresh();
-//     },
-//
-//     /**
-//      * Call NordVPN Command Line Tool to get the current status of the connection
-//      *
-//      * @private
-//      */
-//     _refresh() {
-//         this.stopTimer();
-//         log("Updating NordVPN Status...");
-//         this._update(this.vpnHandler.getStatus());
-//         this.startTimer();
-//     },
-//
-//     /**
-//      * Updates the widgets based on the vpn status
-//      *
-//      * @param vpnStatus
-//      * @private
-//      */
-//     _update(vpnStatus) {
-//         // Update the panel button
-//         if (vpnStatus.connected) {
-//             this._icon.icon_name = "network-vpn-symbolic";
-//         } else {
-//             this._icon.icon_name = "network-vpn-acquiring-symbolic";
-//         }
-//         this._statusLabel.text = vpnStatus.full_status;
-//
-//         //this._panelLabel.style_class = vpnStatus.styleClass;
-//     },
-//
-//     startTimer() {
-//         this._timer = Mainloop.timeout_add_seconds(10, Lang.bind(this, this._refresh));
-//     },
-//
-//     stopTimer() {
-//         if (this._timer) {
-//             Mainloop.source_remove(this._timer);
-//             this._timer = undefined;
-//         }
-//     },
-//
-//     destroy() {
-//         this.stopTimer();
-//         // Call destroy on the parent
-//         this.parent();
-//     }
-// });
-
 class VPNStatusIndicator extends PanelMenu.SystemIndicator {
     constructor() {
         super();
@@ -189,6 +96,8 @@ class VPNStatusIndicator extends PanelMenu.SystemIndicator {
 
         // Content Inside the box
         this._item.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+        this._connectionDetails = new PopupMenu.PopupMenuItem("");
+        this._item.menu.addMenuItem(this._connectionDetails);
 
         // Initiate NordVPN handler
         this.vpnHandler = new NordVPN();
@@ -251,10 +160,8 @@ class VPNStatusIndicator extends PanelMenu.SystemIndicator {
         this._item.label.text = `NordVPN (${vpnStatus.status})`;
 
         if (vpnStatus.connected) {
-            if (!this._disconnectAction) {
-                this._connectionDetails = this._item.menu.addMenuItem(new PopupMenu.PopupMenuItem(vpnStatus.fullStatus));
+            if (!this._disconnectAction)
                 this._disconnectAction = this._item.menu.addAction('Disconnect', this._disconnect.bind(this));
-            }
 
             if (this._connectAction) {
                 this._connectAction.destroy();
@@ -269,12 +176,8 @@ class VPNStatusIndicator extends PanelMenu.SystemIndicator {
                 this._disconnectAction = null;
             }
 
-            if (this._connectionDetails) {
-                this._connectionDetails.destroy();
-                this._connectionDetails = null;
-            }
         }
-        // this._statusLabel.text = vpnStatus.full_status;
+        this._connectionDetails.label.text = vpnStatus.fullStatus;
     }
 
     resetTimer() {
