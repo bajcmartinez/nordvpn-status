@@ -267,7 +267,9 @@ class VPNStatusIndicator extends PanelMenu.SystemIndicator {
             if (this._disconnectAction) {
                 this._disconnectAction.destroy();
                 this._disconnectAction = null;
+            }
 
+            if (this._connectionDetails) {
                 this._connectionDetails.destroy();
                 this._connectionDetails = null;
             }
