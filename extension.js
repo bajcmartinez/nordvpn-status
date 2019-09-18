@@ -52,12 +52,17 @@ class NordVPN {
             fullStatus = data.toString();
         }
         const result = fullStatus.split('\n');
-        const status = result[0].replace("Status:", "").trim();
+        const statusLine = result.find((line) => line.includes("Status:"));
+        const status = statusLine ? statusLine.replace("Status:", "").trim() : "Unknown";
 
         if (status.toUpperCase() === this._states.CONNECTED) {
-            const serverNumber = result[1].match(/\d+/);
-            const country = result[2].replace("Country:", "").trim();
-            const city = result[3].replace("City:", "").trim();
+            const serverNumberLine = result.find((line) => line.includes("server:"));
+            const countryLine = result.find((line) => line.includes("Country:"));
+            const cityLine = result.find((line) => line.includes("City:"));
+
+            const serverNumber = serverNumberLine ? serverNumberLine.match(/\d+/) :  "Unknown";
+            const country = countryLine ? countryLine.replace("Country:", "").trim() :  "Unknown";
+            const city = cityLine ? cityLine.replace("City:", "").trim() :  "Unknown";
 
             return {
                 connected: true,
