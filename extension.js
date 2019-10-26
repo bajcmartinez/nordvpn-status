@@ -47,9 +47,9 @@ class NordVPN {
         const data = (GLib.spawn_command_line_sync(this._commands.status)[1]);
         let fullStatus;
         if (data instanceof Uint8Array) {
-            fullStatus = imports.byteArray.toString(data);
+            fullStatus = imports.byteArray.toString(data).trim();
         } else {
-            fullStatus = data.toString();
+            fullStatus = data.toString().trim();
         }
         const result = fullStatus.split('\n');
         const statusLine = result.find((line) => line.includes("Status:"));
@@ -162,7 +162,7 @@ class VPNStatusIndicator extends PanelMenu.SystemIndicator {
     _update(vpnStatus) {
         // Update the panel button
         this._indicator.visible = vpnStatus.connected;
-        this._item.label.text = `NordVPN (${vpnStatus.status})`;
+        this._item.label.text = `NordVPN ${vpnStatus.status}`;
 
         if (vpnStatus.connected) {
             if (!this._disconnectAction)
