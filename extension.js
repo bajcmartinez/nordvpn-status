@@ -206,7 +206,9 @@ class VPNStatusIndicator extends PanelMenu.SystemIndicator {
         this.stopTimer();
         // Call destroy on the parent
         this.indicators.destroy();
-        this.parent();
+        if (typeof this.parent === "function") {
+            this.parent();
+        }
     }
 }
 
