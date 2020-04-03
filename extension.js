@@ -148,7 +148,6 @@ class VPNStatusIndicator extends PanelMenu.SystemIndicator {
      */
     _refresh() {
         this.stopTimer();
-        log("Updating NordVPN Status...");
         this._update(this.vpnHandler.getStatus());
         this.startTimer();
     }
@@ -204,8 +203,10 @@ class VPNStatusIndicator extends PanelMenu.SystemIndicator {
 
     destroy() {
         this.stopTimer();
+
         // Call destroy on the parent
         this.indicators.destroy();
+        this.menu.destroy();
         if (typeof this.parent === "function") {
             this.parent();
         }
