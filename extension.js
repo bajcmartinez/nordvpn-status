@@ -7,6 +7,7 @@ const Lang = imports.lang;
 const Main = imports.ui.main;
 const Mainloop  = imports.mainloop;
 const AggregateMenu = Main.panel.statusArea.aggregateMenu;
+const GObject = imports.gi.GObject
 
 let vpnStatusIndicator;
 
@@ -82,136 +83,138 @@ class NordVPN {
     }
 }
 
-class VPNStatusIndicator extends PanelMenu.SystemIndicator {
-    constructor() {
-        super();
+const VPNStatusIndicator = GObject.registerClass(
+    class VPNStatusIndicator extends PanelMenu.SystemIndicator {
+        _init() {
+            super._init();
 
-        // Add the indicator to the indicator bar
-        this._indicator = this._addIndicator();
-        this._indicator.icon_name = 'network-vpn-symbolic';
-        this._indicator.visible = false;
+            // Add the indicator to the indicator bar
+            this._indicator = this._addIndicator();
+            this._indicator.icon_name = 'network-vpn-symbolic';
+            this._indicator.visible = false;
 
-        // Build a menu
+            // Build a menu
 
-        // Main item with the header section
-        this._item = new PopupMenu.PopupSubMenuMenuItem('NordVPN', true);
-        this._item.icon.icon_name = 'network-vpn-symbolic';
-        this._item.label.clutter_text.x_expand = true;
-        this.menu.addMenuItem(this._item);
+            // Main item with the header section
+            this._item = new PopupMenu.PopupSubMenuMenuItem('NordVPN', true);
+            this._item.icon.icon_name = 'network-vpn-symbolic';
+            this._item.label.clutter_text.x_expand = true;
+            this.menu.addMenuItem(this._item);
 
-        // Content Inside the box
-        this._item.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-        this._connectionDetails = new PopupMenu.PopupMenuItem("");
-        this._item.menu.addMenuItem(this._connectionDetails);
+            // Content Inside the box
+            this._item.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+            this._connectionDetails = new PopupMenu.PopupMenuItem("");
+            this._item.menu.addMenuItem(this._connectionDetails);
 
-        // Initiate NordVPN handler
-        this.vpnHandler = new NordVPN();
+            // Initiate NordVPN handler
+            this.vpnHandler = new NordVPN();
 
-        // Add elements to the UI
-        AggregateMenu._indicators.insert_child_at_index(this.indicators, 0);
-        AggregateMenu.menu.addMenuItem(this.menu, 4);
-    }
+            // Add elements to the UI
+            AggregateMenu._indicators.insert_child_at_index(this.indicators, 0);
+            AggregateMenu.menu.addMenuItem(this.menu, 4);
+        }
 
-    enable() {
-        this.resetTimer();
-        this._refresh();
-    }
+        enable() {
+            this.resetTimer();
+            this._refresh();
+        }
 
-    /**
-     * Call NordVPN Command Line Tool to connect to the VPN Service
-     *
-     * @private
-     */
-    _connect() {
-        this.stopTimer();
-        this.vpnHandler.connect();
-        this.resetTimer();
-        this.startTimer();
-    }
+        /**
+         * Call NordVPN Command Line Tool to connect to the VPN Service
+         *
+         * @private
+         */
+        _connect() {
+            this.stopTimer();
+            this.vpnHandler.connect();
+            this.resetTimer();
+            this.startTimer();
+        }
 
-    /**
-     * Call NordVPN Command Line Tool to connect to the VPN Service
-     *
-     * @private
-     */
-    _disconnect() {
-        this.stopTimer();
-        this.vpnHandler.disconnect();
-        this.resetTimer();
-        this.startTimer();
-    }
+        /**
+         * Call NordVPN Command Line Tool to connect to the VPN Service
+         *
+         * @private
+         */
+        _disconnect() {
+            this.stopTimer();
+            this.vpnHandler.disconnect();
+            this.resetTimer();
+            this.startTimer();
+        }
 
-    /**
-     * Call NordVPN Command Line Tool to get the current status of the connection
-     *
-     * @private
-     */
-    _refresh() {
-        this.stopTimer();
-        this._update(this.vpnHandler.getStatus());
-        this.startTimer();
-    }
+        /**
+         * Call NordVPN Command Line Tool to get the current status of the connection
+         *
+         * @private
+         */
+        _refresh() {
+            this.stopTimer();
+            this._update(this.vpnHandler.getStatus());
+            this.startTimer();
+        }
 
-    /**
-     * Updates the widgets based on the vpn status
-     *
-     * @param vpnStatus
-     * @private
-     */
-    _update(vpnStatus) {
-        // Update the panel button
-        this._indicator.visible = vpnStatus.connected;
-        this._item.label.text = `NordVPN ${vpnStatus.status}`;
+        /**
+         * Updates the widgets based on the vpn status
+         *
+         * @param vpnStatus
+         * @private
+         */
+        _update(vpnStatus) {
+            // Update the panel button
+            this._indicator.visible = vpnStatus.connected;
+            this._item.label.text = `NordVPN3 ${vpnStatus.status}`;
 
-        if (vpnStatus.connected) {
-            if (!this._disconnectAction)
-                this._disconnectAction = this._item.menu.addAction('Disconnect', this._disconnect.bind(this));
+            if (vpnStatus.connected) {
+                if (!this._disconnectAction)
+                    this._disconnectAction = this._item.menu.addAction('Disconnect', this._disconnect.bind(this));
 
-            if (this._connectAction) {
-                this._connectAction.destroy();
-                this._connectAction = null;
+                if (this._connectAction) {
+                    this._connectAction.destroy();
+                    this._connectAction = null;
+                }
+            } else {
+                if (!this._connectAction)
+                    this._connectAction = this._item.menu.addAction('Connect', this._connect.bind(this));
+
+                if (this._disconnectAction) {
+                    this._disconnectAction.destroy();
+                    this._disconnectAction = null;
+                }
+
             }
-        } else {
-            if (!this._connectAction)
-                this._connectAction = this._item.menu.addAction('Connect', this._connect.bind(this));
+            this._connectionDetails.label.text = vpnStatus.fullStatus;
+        }
 
-            if (this._disconnectAction) {
-                this._disconnectAction.destroy();
-                this._disconnectAction = null;
+        resetTimer() {
+            this._timerStep = 1;
+        }
+
+        startTimer() {
+            this._timer = Mainloop.timeout_add_seconds(this._timerStep, Lang.bind(this, this._refresh));
+            this._timerStep = this._timerStep * 2;
+            this._timerStep = (this._timerStep > 30) ? 30 : this._timerStep;
+        }
+
+        stopTimer() {
+            if (this._timer) {
+                Mainloop.source_remove(this._timer);
+                this._timer = undefined;
             }
-
         }
-        this._connectionDetails.label.text = vpnStatus.fullStatus;
-    }
 
-    resetTimer() {
-        this._timerStep = 1;
-    }
+        destroy() {
+            this.stopTimer();
 
-    startTimer() {
-        this._timer = Mainloop.timeout_add_seconds(this._timerStep, Lang.bind(this, this._refresh));
-        this._timerStep = this._timerStep * 2;
-        this._timerStep = (this._timerStep > 30) ? 30 : this._timerStep;
-    }
-
-    stopTimer() {
-        if (this._timer) {
-            Mainloop.source_remove(this._timer);
-            this._timer = undefined;
+            // Call destroy on the parent
+            this.indicators.destroy();
+            this.menu.destroy();
+            if (typeof this.parent === "function") {
+                this.parent();
+            }
         }
     }
-
-    destroy() {
-        this.stopTimer();
-
-        // Call destroy on the parent
-        this.indicators.destroy();
-        this.menu.destroy();
-        if (typeof this.parent === "function") {
-            this.parent();
-        }
-    }
-}
+);
 
 function init() { }
 
