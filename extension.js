@@ -163,7 +163,7 @@ const VPNStatusIndicator = GObject.registerClass(
         _update(vpnStatus) {
             // Update the panel button
             this._indicator.visible = vpnStatus.connected;
-            this._item.label.text = `NordVPN3 ${vpnStatus.status}`;
+            this._item.label.text = `NordVPN ${vpnStatus.status}`;
 
             if (vpnStatus.connected) {
                 if (!this._disconnectAction)
