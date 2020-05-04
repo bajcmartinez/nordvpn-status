@@ -52,6 +52,7 @@ class NordVPN {
         } else {
             fullStatus = data.toString().trim();
         }
+        fullStatus = fullStatus.slice(fullStatus.indexOf("Status:"), fullStatus.length).trim();
         const result = fullStatus.split('\n');
         const statusLine = result.find((line) => line.includes("Status:"));
         const status = statusLine ? statusLine.replace("Status:", "").trim() : "Unknown";
