@@ -208,7 +208,8 @@ const VPNStatusIndicator = GObject.registerClass(
             this.stopTimer();
 
             // Call destroy on the parent
-            this.indicators.destroy();
+            // On Gnome 3.38, this line causes a "too much recursion" error and the extension is disabled
+            // this.indicators.destroy();
             this.menu.destroy();
             if (typeof this.parent === "function") {
                 this.parent();
