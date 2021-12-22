@@ -3,7 +3,8 @@
   "description": "A Gnome extension that allows the user to monitor and control the status of the NordVPN connection in the top bar.\n\nSource: https://github.com/bajcmartinez/nordvpn-status",
   "uuid": "nordvpn_status@jcmartinez.dev",
   "shell-version": [
-    "3.34.0"
+    "3.34.0",
+    "40.0"
   ],
   "url": "https://github.com/bajcmartinez/nordvpn-status"
 }
